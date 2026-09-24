@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Clock, 
   PlusCircle, 
   LogOut, 
-  Menu
+  Menu,
+  Download
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -14,6 +15,32 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenQuickAction, onToggleNav }) => {
   const { activeShift, transactions, products, currentUser, logout } = useApp();
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    }
+  };
 
   // Today's stats calculation
   const todayStart = new Date();
@@ -118,6 +145,26 @@ export const Header: React.FC<HeaderProps> = ({ onOpenQuickAction, onToggleNav }
 
       {/* Quick Live Bar & Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        {/* PWA Install Button */}
+        {isInstallable && (
+          <button
+            onClick={handleInstallClick}
+            className="btn btn-outline btn-sm"
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.775rem',
+              color: '#0284c7',
+              borderColor: '#bae6fd',
+              background: '#f0f9ff',
+              fontWeight: 700
+            }}
+            title="Install Vankah App on Home Screen"
+          >
+            <Download size={14} />
+            <span>Install App</span>
+          </button>
+        )}
+
         <div style={{
           display: 'flex',
           alignItems: 'center',
