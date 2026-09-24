@@ -4,7 +4,9 @@ import {
   User, UserRole, CartItem, PaymentMethod 
 } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000/api';
+// Default to live Render backend if environment variable is not explicitly provided
+const RAW_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'https://vankah-backend.onrender.com/api';
+const API_BASE = RAW_URL.replace(/\/+$/, '');
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
