@@ -1,43 +1,35 @@
 :root {
-  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-
-  /* Color Palette */
+  --brand-blue: #2563eb;
+  --brand-blue-light: #eff6ff;
+  --brand-amber: #d97706;
+  --brand-amber-light: #fef3c7;
+  --brand-emerald: #059669;
+  --brand-emerald-light: #ecfdf5;
+  --brand-rose: #e11d48;
+  --brand-rose-light: #ffe4e6;
+  --brand-violet: #7c3aed;
+  --brand-violet-light: #f5f3ff;
+  
   --bg-main: #f8fafc;
   --bg-surface: #ffffff;
-  --bg-surface-subtle: #f1f5f9;
-  --bg-dark: #0f172a;
-  --bg-dark-surface: #1e293b;
-
   --border-subtle: #e2e8f0;
-  --border-focus: #3b82f6;
-
+  
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
-  --text-inverse: #ffffff;
-
-  /* Brand Accents */
-  --brand-blue: #2563eb;
-  --brand-blue-light: #eff6ff;
-  --brand-emerald: #10b981;
-  --brand-emerald-light: #ecfdf5;
-  --brand-amber: #f59e0b;
-  --brand-amber-light: #fffbeb;
-  --brand-violet: #8b5cf6;
-  --brand-violet-light: #f5f3ff;
-  --brand-rose: #f43f5e;
-  --brand-rose-light: #fff1f2;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-
+  
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-lg: 14px;
   --radius-full: 9999px;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 * {
@@ -50,9 +42,10 @@ body {
   font-family: var(--font-main);
   background-color: var(--bg-main);
   color: var(--text-primary);
-  line-height: 1.45;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
 }
 
@@ -80,6 +73,7 @@ button, input, select, textarea {
 .app-container {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100%;
   overflow: hidden;
   background: #0f172a;
@@ -91,6 +85,7 @@ button, input, select, textarea {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg-main);
@@ -114,10 +109,13 @@ button, input, select, textarea {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   flex-shrink: 0;
   border-right: 1px solid #1e293b;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 50;
+  overflow: hidden;
 }
 
 .sidebar-backdrop {
@@ -130,9 +128,13 @@ button, input, select, textarea {
     top: 0;
     left: 0;
     bottom: 0;
-    width: 280px;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    width: 290px;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
     transform: translateX(-100%);
+    padding-bottom: env(safe-area-inset-bottom, 8px);
   }
 
   .sidebar-desktop.open {
