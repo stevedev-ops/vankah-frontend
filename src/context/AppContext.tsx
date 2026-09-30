@@ -1,25 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import {
-  Product,
-  JobCard,
-  YardVehicle,
-  ToolItem,
-  ToolRental,
-  Shift,
-  StockAudit,
-  Transaction,
-  PaymentMethod,
-  CartItem,
-  LaborItem,
-  JobPartItem,
-  User,
-  UserRole,
-  DebtorCustomer,
-  DebtRecord
+import { 
+  Product, JobCard, YardVehicle, ToolItem, ToolRental, 
+  DebtorCustomer, DebtRecord, Shift, StockAudit, Transaction, 
+  User, UserRole, CartItem, PaymentMethod 
 } from '../types';
 import { api } from '../services/api';
 
-interface VehicleHistoryResult {
+export interface VehicleHistoryResult {
   jobCards: JobCard[];
   yardStays: YardVehicle[];
   totalSpent: number;
@@ -85,67 +72,33 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('erp_currentUser');
-    return saved ? JSON.parse(saved) : null;
-  });
+function loadSaved<T>(key: string, fallback: T): T {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [jobCards, setJobCards] = useState<JobCard[]>([]);
-  const [yardVehicles, setYardVehicles] = useState<YardVehicle[]>([]);
-  const [tools, setTools] = useState<ToolItem[]>([]);
-  const [toolRentals, setToolRentals] = useState<ToolRental[]>([]);
-  const [debtors, setDebtors] = useState<DebtorCustomer[]>([]);
-  const [debtRecords, setDebtRecords] = useState<DebtRecord[]>([]);
-  const [activeShift, setActiveShift] = useState<Shift | null>(null);
-  const [shiftHistory, setShiftHistory] = useState<Shift[]>([]);
-  const [stockAudits, setStockAudits] = useState<StockAudit[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(() => loadSaved('erp_currentUser', null));
+
+  const [products, setProducts] = useState<Product[]>(() => loadSaved('erp_products', []));
+  const [jobCards, setJobCards] = useState<JobCard[]>(() => loadSaved('erp_jobCards', []));
+  const [yardVehicles, setYardVehicles] = useState<YardVehicle[]>(() => loadSaved('erp_yardVehicles', []));
+  const [tools, setTools] = useState<ToolItem[]>(() => loadSaved('erp_tools', []));
+  const [toolRentals, setToolRentals] = useState<ToolRental[]>(() => loadSaved('erp_toolRentals', []));
+  const [debtors, setDebtors] = useState<DebtorCustomer[]>(() => loadSaved('erp_debtors', []));
+  const [debtRecords, setDebtRecords] = useState<DebtRecord[]>(() => loadSaved('erp_debtRecords', []));
+  const [activeShift, setActiveShift] = useState<Shift | null>(() => loadSaved('erp_activeShift', null));
+  const [shiftHistory, setShiftHistory] = useState<Shift[]>(() => loadSaved('erp_shiftHistory', []));
+  const [stockAudits, setStockAudits] = useState<StockAudit[]>(() => loadSaved('erp_stockAudits', []));
+  const [transactions, setTransactions] = useState<Transaction[]>(() => loadSaved('erp_transactions', []));
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [isOnline, setIsOnline] = useState<boolean>(true);
 
-  // Fetch initial data from Django backend
-  useEffect(() => {
-    async function fetchAll() {
-      try {
-        const [
-          prods, jobs, yards, tls, rents, dbts, dbtRecs, shifts, txs, audits, curShift
-        ] = await Promise.all([
-          api.getProducts().catch(() => []),
-          api.getJobCards().catch(() => []),
-          api.getYardVehicles().catch(() => []),
-          api.getTools().catch(() => []),
-          api.getToolRentals().catch(() => []),
-          api.getDebtors().catch(() => []),
-          api.getDebtRecords().catch(() => []),
-          api.getShifts().catch(() => []),
-          api.getTransactions().catch(() => []),
-          api.getStockAudits().catch(() => []),
-          api.getActiveShift().catch(() => null),
-        ]);
-
-        if (prods.length > 0) setProducts(prods);
-        if (jobs.length > 0) setJobCards(jobs);
-        if (yards.length > 0) setYardVehicles(yards);
-        if (tls.length > 0) setTools(tls);
-        if (rents.length > 0) setToolRentals(rents);
-        if (dbts.length > 0) setDebtors(dbts);
-        if (dbtRecs.length > 0) setDebtRecords(dbtRecs);
-        if (shifts.length > 0) setShiftHistory(shifts);
-        if (txs.length > 0) setTransactions(txs);
-        if (audits.length > 0) setStockAudits(audits);
-        if (curShift) setActiveShift(curShift);
-
-        setIsOnline(true);
-      } catch (err) {
-        console.warn('Django backend unreachable, continuing in client mode:', err);
-        setIsOnline(false);
-      }
-    }
-    fetchAll();
-  }, []);
-
+  // Sync state changes to localStorage
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('erp_currentUser', JSON.stringify(currentUser));
@@ -154,9 +107,67 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [currentUser]);
 
+  useEffect(() => { localStorage.setItem('erp_products', JSON.stringify(products)); }, [products]);
+  useEffect(() => { localStorage.setItem('erp_jobCards', JSON.stringify(jobCards)); }, [jobCards]);
+  useEffect(() => { localStorage.setItem('erp_yardVehicles', JSON.stringify(yardVehicles)); }, [yardVehicles]);
+  useEffect(() => { localStorage.setItem('erp_tools', JSON.stringify(tools)); }, [tools]);
+  useEffect(() => { localStorage.setItem('erp_toolRentals', JSON.stringify(toolRentals)); }, [toolRentals]);
+  useEffect(() => { localStorage.setItem('erp_debtors', JSON.stringify(debtors)); }, [debtors]);
+  useEffect(() => { localStorage.setItem('erp_debtRecords', JSON.stringify(debtRecords)); }, [debtRecords]);
+  useEffect(() => { 
+    if (activeShift) {
+      localStorage.setItem('erp_activeShift', JSON.stringify(activeShift));
+    } else {
+      localStorage.removeItem('erp_activeShift');
+    }
+  }, [activeShift]);
+  useEffect(() => { localStorage.setItem('erp_shiftHistory', JSON.stringify(shiftHistory)); }, [shiftHistory]);
+  useEffect(() => { localStorage.setItem('erp_stockAudits', JSON.stringify(stockAudits)); }, [stockAudits]);
+  useEffect(() => { localStorage.setItem('erp_transactions', JSON.stringify(transactions)); }, [transactions]);
+
+  // Fetch initial data from Django backend
+  useEffect(() => {
+    async function fetchAll() {
+      try {
+        const [
+          prods, jobs, yards, tls, rents, dbts, dbtRecs, shifts, txs, audits, curShift
+        ] = await Promise.all([
+          api.getProducts().catch(() => null),
+          api.getJobCards().catch(() => null),
+          api.getYardVehicles().catch(() => null),
+          api.getTools().catch(() => null),
+          api.getToolRentals().catch(() => null),
+          api.getDebtors().catch(() => null),
+          api.getDebtRecords().catch(() => null),
+          api.getShifts().catch(() => null),
+          api.getTransactions().catch(() => null),
+          api.getStockAudits().catch(() => null),
+          api.getActiveShift().catch(() => null),
+        ]);
+
+        if (Array.isArray(prods) && prods.length > 0) setProducts(prods);
+        if (Array.isArray(jobs) && jobs.length > 0) setJobCards(jobs);
+        if (Array.isArray(yards) && yards.length > 0) setYardVehicles(yards);
+        if (Array.isArray(tls) && tls.length > 0) setTools(tls);
+        if (Array.isArray(rents) && rents.length > 0) setToolRentals(rents);
+        if (Array.isArray(dbts) && dbts.length > 0) setDebtors(dbts);
+        if (Array.isArray(dbtRecs) && dbtRecs.length > 0) setDebtRecords(dbtRecs);
+        if (Array.isArray(shifts) && shifts.length > 0) setShiftHistory(shifts);
+        if (Array.isArray(txs) && txs.length > 0) setTransactions(txs);
+        if (Array.isArray(audits) && audits.length > 0) setStockAudits(audits);
+        if (curShift) setActiveShift(curShift);
+
+        setIsOnline(true);
+      } catch (err) {
+        console.warn('Django backend unreachable, continuing in offline/client mode:', err);
+        setIsOnline(false);
+      }
+    }
+    fetchAll();
+  }, []);
+
   // Authentication
   const login = (role: UserRole, pin: string): boolean => {
-    // Check built-in fallback roles
     if (role === 'ADMIN' && (pin === '1234' || pin === 'admin')) {
       const adminUser: User = {
         id: 'user-admin',
@@ -189,12 +200,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Product / Stock actions
   const addProduct = async (productData: Omit<Product, 'id'>) => {
+    const localProd: Product = { ...productData, id: `prod-${Date.now()}` };
+    setProducts(prev => [localProd, ...prev]);
+
     try {
       const created = await api.addProduct(productData);
-      setProducts(prev => [created, ...prev]);
-    } catch {
-      const fallback: Product = { ...productData, id: `prod-${Date.now()}` };
-      setProducts(prev => [fallback, ...prev]);
+      setProducts(prev => prev.map(p => p.id === localProd.id ? created : p));
+    } catch (e) {
+      console.warn('Backend addProduct failed (stored locally):', e);
     }
   };
 
@@ -203,7 +216,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       await api.updateProduct(id, updates);
     } catch (e) {
-      console.warn('Backend updateProduct failed:', e);
+      console.warn('Backend updateProduct failed (stored locally):', e);
     }
   };
 
@@ -212,7 +225,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       await api.deleteProduct(id);
     } catch (e) {
-      console.warn('Backend deleteProduct failed:', e);
+      console.warn('Backend deleteProduct failed (stored locally):', e);
     }
   };
 
@@ -229,7 +242,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const totalCost = cart.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
     const totalProfit = totalGross - totalCost;
 
-    // Local optimistic update
+    // Optimistic stock reduction
     setProducts(prev => prev.map(prod => {
       const inCart = cart.find(c => c.product.id === prod.id);
       if (inCart) {
@@ -249,12 +262,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const creditRecord: DebtRecord = {
         id: `rec-${Date.now()}`,
         customerId: debtorId,
-        customerName: targetDebtor?.name || 'Debtor',
+        customerName: targetDebtor ? targetDebtor.name : 'Credit Customer',
         date: new Date().toISOString(),
         type: 'CREDIT_PURCHASE',
         amount: totalGross,
         referenceNo: txNo,
-        description: `POS Credit: ${cart.map(c => `${c.quantity}x ${c.product.name}`).join(', ')}`,
+        description: cart.map(i => `${i.product.name} (x${i.quantity})`).join(', '),
         cashierName: currentUser ? currentUser.name : 'Cashier'
       };
       setDebtRecords(prev => [creditRecord, ...prev]);
@@ -266,90 +279,100 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       type: 'POS_SALE',
       referenceId: txNo,
       referenceNo: txNo,
-      description: paymentMethod === 'Credit' 
-        ? `Credit Sale to ${debtors.find(d => d.id === debtorId)?.name || 'Debtor'} (${cart.map(c => `${c.quantity}x ${c.product.name}`).join(', ')})`
-        : `POS Sale (${cart.map(c => `${c.quantity}x ${c.product.name}`).join(', ')})`,
+      description: cart.map(i => `${i.product.name} (x${i.quantity})`).join(', '),
       grossAmount: totalGross,
       costAmount: totalCost,
       profitAmount: totalProfit,
       paymentMethod,
-      mpesaAmount: paymentMethod === 'Credit' ? 0 : mpesaAmount,
-      cashAmount: paymentMethod === 'Credit' ? 0 : cashAmount,
+      mpesaAmount: paymentMethod === 'Mpesa' ? totalGross : (paymentMethod === 'Split' ? mpesaAmount : 0),
+      cashAmount: paymentMethod === 'Cash' ? totalGross : (paymentMethod === 'Split' ? cashAmount : 0),
       mpesaRef,
       cashierName: currentUser ? currentUser.name : (activeShift ? activeShift.cashierName : 'Cashier')
     };
 
     setTransactions(prev => [newTx, ...prev]);
 
+    // Update active shift float expected
     if (activeShift && activeShift.status === 'Open' && paymentMethod !== 'Credit') {
       setActiveShift(prev => prev ? ({
         ...prev,
-        totalCashExpected: prev.totalCashExpected + cashAmount,
-        totalMpesaExpected: prev.totalMpesaExpected + mpesaAmount
+        totalCashExpected: prev.totalCashExpected + newTx.cashAmount,
+        totalMpesaExpected: prev.totalMpesaExpected + newTx.mpesaAmount
       }) : null);
     }
 
-    // Call backend API in background
-    api.processPOSSale(cart, paymentMethod, mpesaAmount, cashAmount, mpesaRef, debtorId).catch(err => {
-      console.warn('Backend POS sync:', err);
+    // Sync to backend
+    api.processPOSSale(cart, paymentMethod, mpesaAmount, cashAmount, mpesaRef, debtorId).catch(e => {
+      console.warn('Backend processPOSSale failed (stored locally):', e);
     });
 
     return newTx;
   };
 
-  // Job Cards actions
+  // Job Cards
   const createJobCard = (jobCardData: Omit<JobCard, 'id' | 'jobNo' | 'createdAt'>): JobCard => {
+    const now = new Date();
+    const jobNo = `JOB-${now.getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
     const newJob: JobCard = {
       ...jobCardData,
       id: `job-${Date.now()}`,
-      jobNo: `JOB-2026-${(jobCards.length + 1).toString().padStart(3, '0')}`,
-      createdAt: new Date().toISOString()
+      jobNo,
+      createdAt: now.toISOString(),
+      status: jobCardData.status || 'Intake',
     };
 
+    setJobCards(prev => [newJob, ...prev]);
+
     if (newJob.advanceDeposit > 0) {
-      const depositTx: Transaction = {
+      const advTx: Transaction = {
         id: `tx-${Date.now()}`,
         date: new Date().toISOString(),
-        type: 'JOB_CARD',
+        type: 'JOB_ADVANCE',
         referenceId: newJob.id,
         referenceNo: newJob.jobNo,
         description: `Advance Deposit for ${newJob.carRegNo} (${newJob.carMakeModel})`,
         grossAmount: newJob.advanceDeposit,
         costAmount: 0,
         profitAmount: newJob.advanceDeposit,
-        paymentMethod: newJob.paymentMethod || 'Mpesa',
-        mpesaAmount: newJob.mpesaAmount || (newJob.paymentMethod === 'Mpesa' ? newJob.advanceDeposit : 0),
-        cashAmount: newJob.cashAmount || (newJob.paymentMethod === 'Cash' ? newJob.advanceDeposit : 0),
-        mpesaRef: newJob.mpesaRef,
-        cashierName: currentUser ? currentUser.name : (activeShift ? activeShift.cashierName : 'Cashier')
+        paymentMethod: 'Cash',
+        mpesaAmount: 0,
+        cashAmount: newJob.advanceDeposit,
+        cashierName: currentUser ? currentUser.name : (activeShift ? activeShift.cashierName : 'Service Advisor')
       };
-      setTransactions(prev => [depositTx, ...prev]);
+      setTransactions(prev => [advTx, ...prev]);
 
       if (activeShift && activeShift.status === 'Open') {
         setActiveShift(prev => prev ? ({
           ...prev,
-          totalCashExpected: prev.totalCashExpected + depositTx.cashAmount,
-          totalMpesaExpected: prev.totalMpesaExpected + depositTx.mpesaAmount
+          totalCashExpected: prev.totalCashExpected + newJob.advanceDeposit
         }) : null);
       }
     }
 
-    setJobCards(prev => [newJob, ...prev]);
-
     api.createJobCard(jobCardData).then(created => {
       setJobCards(prev => prev.map(j => j.id === newJob.id ? created : j));
-    }).catch(err => console.warn('Backend createJobCard:', err));
+    }).catch(e => {
+      console.warn('Backend createJobCard:', e);
+    });
 
     return newJob;
   };
 
-  const updateJobCard = async (id: string, updates: Partial<JobCard>) => {
-    setJobCards(prev => prev.map(j => j.id === id ? { ...j, ...updates } : j));
-    try {
-      await api.updateJobCard(id, updates);
-    } catch (e) {
+  const updateJobCard = (id: string, updates: Partial<JobCard>) => {
+    setJobCards(prev => prev.map(j => {
+      if (j.id === id) {
+        const updated = { ...j, ...updates };
+        if (updates.status === 'Delivered' && !j.completedAt) {
+          updated.completedAt = new Date().toISOString();
+        }
+        return updated;
+      }
+      return j;
+    }));
+
+    api.updateJobCard(id, updates).catch(e => {
       console.warn('Backend updateJobCard:', e);
-    }
+    });
   };
 
   const settleJobCard = (
@@ -362,48 +385,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const targetJob = jobCards.find(j => j.id === id);
     if (!targetJob) return;
 
-    const totalPartsCost = targetJob.parts.reduce((s, p) => s + p.quantity * p.unitCostPrice, 0);
-    const amountSettled = mpesaAmount + cashAmount;
+    const totalLabor = targetJob.laborItems.reduce((sum, item) => sum + item.cost, 0);
+    const totalPartsSelling = targetJob.parts.reduce((sum, p) => sum + p.unitSellingPrice * p.quantity, 0);
+    const totalPartsCost = targetJob.parts.reduce((sum, p) => sum + p.unitCostPrice * p.quantity, 0);
+    const totalBill = totalLabor + totalPartsSelling;
+    const remainingBalance = totalBill - targetJob.advanceDeposit;
 
-    setProducts(prev => prev.map(prod => {
-      const partUsed = targetJob.parts.find(p => !p.isOutsidePurchase && p.partId === prod.id);
-      if (partUsed) {
-        return { ...prod, stockQty: Math.max(0, prod.stockQty - partUsed.quantity) };
+    setJobCards(prev => prev.map(j => {
+      if (j.id === id) {
+        return {
+          ...j,
+          status: 'Delivered',
+          paymentMethod,
+          mpesaAmount,
+          cashAmount,
+          mpesaRef,
+          completedAt: new Date().toISOString()
+        };
       }
-      return prod;
+      return j;
     }));
 
-    setJobCards(prev => prev.map(j => j.id === id ? {
-      ...j,
-      status: 'Delivered',
-      completedAt: new Date().toISOString()
-    } : j));
+    if (remainingBalance > 0) {
+      const settlementTx: Transaction = {
+        id: `tx-${Date.now()}`,
+        date: new Date().toISOString(),
+        type: 'JOB_CARD',
+        referenceId: targetJob.id,
+        referenceNo: targetJob.jobNo,
+        description: `Final Settlement for ${targetJob.carRegNo} (${targetJob.carMakeModel})`,
+        grossAmount: remainingBalance,
+        costAmount: totalPartsCost,
+        profitAmount: remainingBalance - totalPartsCost,
+        paymentMethod,
+        mpesaAmount: paymentMethod === 'Mpesa' ? remainingBalance : (paymentMethod === 'Split' ? mpesaAmount : 0),
+        cashAmount: paymentMethod === 'Cash' ? remainingBalance : (paymentMethod === 'Split' ? cashAmount : 0),
+        mpesaRef,
+        cashierName: currentUser ? currentUser.name : (activeShift ? activeShift.cashierName : 'Cashier')
+      };
+      setTransactions(prev => [settlementTx, ...prev]);
 
-    const settleTx: Transaction = {
-      id: `tx-${Date.now()}`,
-      date: new Date().toISOString(),
-      type: 'JOB_CARD',
-      referenceId: targetJob.id,
-      referenceNo: targetJob.jobNo,
-      description: `Final Settlement for ${targetJob.carRegNo} (${targetJob.carMakeModel})`,
-      grossAmount: amountSettled,
-      costAmount: totalPartsCost,
-      profitAmount: amountSettled - totalPartsCost,
-      paymentMethod,
-      mpesaAmount,
-      cashAmount,
-      mpesaRef,
-      cashierName: currentUser ? currentUser.name : (activeShift ? activeShift.cashierName : 'Cashier')
-    };
-
-    setTransactions(prev => [settleTx, ...prev]);
-
-    if (activeShift && activeShift.status === 'Open') {
-      setActiveShift(prev => prev ? ({
-        ...prev,
-        totalCashExpected: prev.totalCashExpected + cashAmount,
-        totalMpesaExpected: prev.totalMpesaExpected + mpesaAmount
-      }) : null);
+      if (activeShift && activeShift.status === 'Open') {
+        setActiveShift(prev => prev ? ({
+          ...prev,
+          totalCashExpected: prev.totalCashExpected + settlementTx.cashAmount,
+          totalMpesaExpected: prev.totalMpesaExpected + settlementTx.mpesaAmount
+        }) : null);
+      }
     }
 
     api.settleJobCard(id, paymentMethod, mpesaAmount, cashAmount, mpesaRef).catch(e => {
@@ -412,28 +440,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Yard Vehicles
-  const addYardVehicle = async (vehicleData: Omit<YardVehicle, 'id' | 'isCleared'>) => {
+  const addYardVehicle = (vehicleData: Omit<YardVehicle, 'id' | 'isCleared'>) => {
     const localVehicle: YardVehicle = {
       ...vehicleData,
       id: `yard-${Date.now()}`,
       isCleared: false
     };
     setYardVehicles(prev => [localVehicle, ...prev]);
-    try {
-      const created = await api.addYardVehicle(vehicleData);
+
+    api.addYardVehicle(vehicleData).then(created => {
       setYardVehicles(prev => prev.map(v => v.id === localVehicle.id ? created : v));
-    } catch (e) {
+    }).catch(e => {
       console.warn('Backend addYardVehicle:', e);
-    }
+    });
   };
 
-  const updateYardVehicle = async (id: string, updates: Partial<YardVehicle>) => {
+  const updateYardVehicle = (id: string, updates: Partial<YardVehicle>) => {
     setYardVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
-    try {
-      await api.updateYardVehicle(id, updates);
-    } catch (e) {
+    api.updateYardVehicle(id, updates).catch(e => {
       console.warn('Backend updateYardVehicle:', e);
-    }
+    });
   };
 
   const settleYardVehicle = (
@@ -442,27 +468,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     amountPaid: number,
     mpesaRef?: string
   ) => {
-    const target = yardVehicles.find(v => v.id === id);
-    if (!target) return;
+    const targetVehicle = yardVehicles.find(v => v.id === id);
+    if (!targetVehicle) return;
 
-    const gatePass = `GP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const cleanPlate = targetVehicle.carRegNo.replace(/\s+/g, '').toUpperCase();
+    const gatePassNo = `GP-${dateStr}-${cleanPlate}`;
 
-    setYardVehicles(prev => prev.map(v => v.id === id ? {
-      ...v,
-      paidAmount: v.paidAmount + amountPaid,
-      isCleared: true,
-      gatePassNo: gatePass,
-      clearedAt: new Date().toISOString()
-    } : v));
+    setYardVehicles(prev => prev.map(v => {
+      if (v.id === id) {
+        return {
+          ...v,
+          paidAmount: v.paidAmount + amountPaid,
+          isCleared: true,
+          gatePassNo,
+          clearedAt: new Date().toISOString()
+        };
+      }
+      return v;
+    }));
 
     if (amountPaid > 0) {
       const yardTx: Transaction = {
         id: `tx-${Date.now()}`,
         date: new Date().toISOString(),
         type: 'YARD_FEE',
-        referenceId: target.id,
-        referenceNo: gatePass,
-        description: `Yard Parking & Holding Fee Clearance (${target.carRegNo})`,
+        referenceId: targetVehicle.id,
+        referenceNo: gatePassNo,
+        description: `Yard Storage Fee Clearance for ${targetVehicle.carRegNo}`,
         grossAmount: amountPaid,
         costAmount: 0,
         profitAmount: amountPaid,
@@ -477,8 +510,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (activeShift && activeShift.status === 'Open') {
         setActiveShift(prev => prev ? ({
           ...prev,
-          totalCashExpected: prev.totalCashExpected + (paymentMethod === 'Cash' ? amountPaid : 0),
-          totalMpesaExpected: prev.totalMpesaExpected + (paymentMethod === 'Mpesa' ? amountPaid : 0)
+          totalCashExpected: prev.totalCashExpected + yardTx.cashAmount,
+          totalMpesaExpected: prev.totalMpesaExpected + yardTx.mpesaAmount
         }) : null);
       }
     }
@@ -488,25 +521,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  // Tools
-  const addToolItem = async (toolData: Omit<ToolItem, 'id'>) => {
+  // Tools & Rental
+  const addToolItem = (toolData: Omit<ToolItem, 'id'>) => {
     const localTool: ToolItem = { ...toolData, id: `tool-${Date.now()}` };
     setTools(prev => [...prev, localTool]);
-    try {
-      const created = await api.addToolItem(toolData);
+
+    api.addToolItem(toolData).then(created => {
       setTools(prev => prev.map(t => t.id === localTool.id ? created : t));
-    } catch (e) {
+    }).catch(e => {
       console.warn('Backend addToolItem:', e);
-    }
+    });
   };
 
-  const updateToolItem = async (id: string, updates: Partial<ToolItem>) => {
+  const updateToolItem = (id: string, updates: Partial<ToolItem>) => {
     setTools(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-    try {
-      await api.updateToolItem(id, updates);
-    } catch (e) {
+    api.updateToolItem(id, updates).catch(e => {
       console.warn('Backend updateToolItem:', e);
-    }
+    });
   };
 
   const rentOutTool = (rentalData: Omit<ToolRental, 'id' | 'status'>) => {
@@ -516,17 +547,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       status: 'Active'
     };
 
-    setTools(prev => prev.map(t => t.id === rentalData.toolId ? { ...t, status: 'Rented' } : t));
     setToolRentals(prev => [newRental, ...prev]);
+    setTools(prev => prev.map(t => t.id === rentalData.toolId ? { ...t, status: 'Rented' } : t));
 
-    const totalPaid = rentalData.totalHireFee + rentalData.depositPaid;
+    const totalPaid = newRental.totalHireFee + newRental.depositPaid;
     const rentTx: Transaction = {
       id: `tx-${Date.now()}`,
       date: new Date().toISOString(),
       type: 'TOOL_RENTAL',
       referenceId: newRental.id,
       referenceNo: `RENT-${newRental.toolCode}`,
-      description: `Tool Hire (${newRental.toolName}) + Deposit to ${newRental.hirerName}`,
+      description: `Tool Hire: ${newRental.toolName} to ${newRental.hirerName}`,
       grossAmount: totalPaid,
       costAmount: 0,
       profitAmount: newRental.totalHireFee,
@@ -657,7 +688,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const totalSpent = relatedJobs.reduce((sum, j) => {
       const labor = j.laborItems.reduce((s, l) => s + l.cost, 0);
-      const parts = j.parts.reduce((s, p) => s + p.quantity * p.unitSellingPrice, 0);
+      const parts = j.parts.reduce((sum, p) => sum + p.quantity * p.unitSellingPrice, 0);
       return sum + labor + parts;
     }, 0);
 
@@ -699,9 +730,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setActiveShift(newShift);
     try {
       const created = await api.startShift(cashierName, openingFloat);
-      setActiveShift(created);
+      if (created && created.id) {
+        setActiveShift(created);
+      }
     } catch (e) {
-      console.warn('Backend startShift:', e);
+      console.warn('Backend startShift (saved locally):', e);
     }
   };
 
@@ -723,7 +756,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       await api.endShift(shiftId, actualClosingCash, notes);
     } catch (e) {
-      console.warn('Backend endShift:', e);
+      console.warn('Backend endShift (saved locally):', e);
     }
   };
 
@@ -737,7 +770,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       await api.recordStockAudit(auditData);
     } catch (e) {
-      console.warn('Backend recordStockAudit:', e);
+      console.warn('Backend recordStockAudit (saved locally):', e);
     }
   };
 

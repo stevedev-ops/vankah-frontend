@@ -1,13 +1,15 @@
-const CACHE_NAME = 'vankah-erp-v1';
+const CACHE_NAME = 'vankah-erp-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/vankah_logo.jpg',
-  '/vankah_banner.jpg'
+  '/vankah_banner.jpg',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
-// Install Event: Pre-cache core shell assets
+// Install: Pre-cache core application shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -16,7 +18,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate Event: Clean up old caches
+// Activate: Purge obsolete cache versions and take immediate control
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -31,24 +33,21 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event: Network-first for API requests, Stale-While-Revalidate for UI assets
+// Fetch: Handle network requests
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  // For API endpoints, always go to network (bypass service worker cache)
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(JSON.stringify({ error: 'Offline - Unable to connect to server' }), {
-          headers: { 'Content-Type': 'application/json' },
-          status: 503
-        });
-      })
-    );
+  // Only handle GET requests in service worker cache
+  if (event.request.method !== 'GET') {
     return;
   }
 
-  // For static assets, HTML, images: Stale-While-Revalidate
+  const url = new URL(event.request.url);
+
+  // Bypass SW cache for backend API endpoints and Django admin
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/') || url.hostname.includes('onrender.com')) {
+    return;
+  }
+
+  // Stale-While-Revalidate for UI assets and SPA routes
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
@@ -60,7 +59,7 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // If offline and request is for navigation, return cached index.html
+        // If offline and request is an SPA navigation, return cached index.html
         if (event.request.mode === 'navigate') {
           return caches.match('/index.html');
         }

@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Clock, CircleDollarSign, Smartphone, AlertTriangle, CheckCircle, Lock, Play } from 'lucide-react';
+import { Clock, Lock, Play } from 'lucide-react';
 
 export const ShiftManagement: React.FC = () => {
-  const { activeShift, shiftHistory, startShift, endShift, transactions } = useApp();
+  const { currentUser, activeShift, shiftHistory, startShift, endShift } = useApp();
 
-  const [cashierName, setCashierName] = useState('Owner / Master Admin');
-  const [openingFloat, setOpeningFloat] = useState<number>(5000);
+  const [cashierName, setCashierName] = useState(currentUser ? currentUser.name : 'Workshop Cashier');
+  const [openingFloat, setOpeningFloat] = useState<number>(0);
   const [actualClosingCash, setActualClosingCash] = useState<number>(0);
   const [notes, setNotes] = useState('');
   const [showCloseModal, setShowCloseModal] = useState(false);
+
+  useEffect(() => {
+    if (currentUser?.name) {
+      setCashierName(currentUser.name);
+    }
+  }, [currentUser]);
 
   const handleStartShift = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +103,7 @@ export const ShiftManagement: React.FC = () => {
                 <input
                   type="number"
                   required
+                  min="0"
                   className="form-input"
                   value={openingFloat}
                   onChange={e => setOpeningFloat(Number(e.target.value))}

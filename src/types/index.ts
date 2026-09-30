@@ -178,7 +178,7 @@ export interface StockAudit {
 export interface Transaction {
   id: string;
   date: string;
-  type: 'POS_SALE' | 'JOB_CARD' | 'YARD_FEE' | 'TOOL_RENTAL' | 'OUTSIDE_PURCHASE_EXPENSE' | 'DEBT_REPAYMENT';
+  type: 'POS_SALE' | 'JOB_CARD' | 'YARD_FEE' | 'TOOL_RENTAL' | 'OUTSIDE_PURCHASE_EXPENSE' | 'DEBT_REPAYMENT' | 'JOB_ADVANCE';
   referenceId: string;
   referenceNo: string;
   description: string;
